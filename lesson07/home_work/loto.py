@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- encoding utf-8 -*-
 
 """
 == Лото ==
@@ -57,3 +58,95 @@
 модуль random: http://docs.python.org/3/library/random.html
 
 """
+
+import random
+
+def get_nums( nums ):
+	while len(nums):
+		idx = random.randint(0, len(nums)-1)
+		yield nums.pop(idx)
+
+
+# в случайном порядке выбираем бочонки с числами от 1 до 90
+def get_barrels():
+	return get_nums(list(range(1,91)))
+
+# выбираем случайные 5 мест из диапазона [0, 15)
+def get_placer():
+	return get_nums(list(range (0,15)))
+ 
+class Board:
+	def __init__(self, name):
+		self.name = name
+		self.state = 'В игре'
+		b = get_barrels()
+		self._table = []
+		for l in range(3):
+			# сформируем строку из чисел
+			# сначала - заготовку с пробелами
+			line = [0 for i in range(15)]
+			# отберем 5 чисел для строки
+			nums = [b.__next__() for i in range(5)]
+			nums.sort()
+			# теперь - выберем 5 позиций для размещения
+			p = get_placer()
+			places = [p.__next__() for i in range(5)]
+			places.sort()
+
+			# теперь разместим числа по позициям
+			for place,num in list(zip(places, nums)):
+				line[place] = num
+			# добавляем строку в карточку
+			self._table.append(line)
+
+	def print(self):
+		print("{:-^45}".format(self.name)+'-')
+		for row in self._table:
+			line = "|"
+			for col in row:
+				ph = "  " if col == 0 else "--" if col == -1 else str(col)
+				line += "{:2}".format(ph) + '|'
+			print(line)
+		print("---"*15+'-')
+
+	def strike_out(self, num):
+		for row in self._table:
+			if num in row:
+				row[row.index(num)] = -1
+				return True
+		return False
+
+	def win(self):
+		for row in self._table:
+			if sum(row) != -5:
+				return False
+		return True
+
+class Lotto:
+	def __init__(self):
+		self.player1 = Board("Ваша карточка")
+		self.player2 = Board("Карточка компьютера")
+		self.barrels = get_barrels()
+		self.remain   = 90
+	
+	def Loop(self):
+		while self.remain and not self.player1.win() and not self.player2.win():
+			b = self.barrels.__next__()
+			self.remain = self.remain-1
+			print("Новый бочонок: {:2} (осталось {})".format(b, self.remain))
+			self.player1.print()
+			self.player2.print()
+			# Действие игрока
+			action = '-'
+			while action not in ['y', 'n']:
+				action = input("Зачеркнуть цифру? (y/n) ").lower()
+			if action == 'y':
+				self.player1.strike_out(b)
+				self.player2.strike_out(b)
+
+
+l = Lotto()
+l.Loop()
+			
+
+

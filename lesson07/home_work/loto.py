@@ -78,7 +78,6 @@ def get_placer():
 class Board:
 	def __init__(self, name):
 		self.name = name
-		self.state = 'В игре'
 		b = get_barrels()
 		self._table = []
 		for l in range(3):
@@ -109,12 +108,17 @@ class Board:
 			print(line)
 		print("---"*15+'-')
 
+	def check_num(self, num):
+		for row in self._table:
+			if num in row:
+				return True
+		return False
+
 	def strike_out(self, num):
 		for row in self._table:
 			if num in row:
 				row[row.index(num)] = -1
-				return True
-		return False
+				return 
 
 	def win(self):
 		for row in self._table:
@@ -122,31 +126,74 @@ class Board:
 				return False
 		return True
 
+class Player:
+	def __init__(self, card):
+		self.card = card
+		self.status = 'В игре'
+
+		def choose(self, num):
+			return 'y'
+
+	def showCard(self):
+		self.card.print()
+
+	def move(self, num):
+		action = self.choose(num)
+		has_num = self.card.check_num(num)
+		if action == 'y':
+			if has_num:
+				self.card.strike_out(num)
+				if self.card.win():
+					self.status = "Выигрыш"
+			else:
+				self.status = "Проигрыш"
+		else:
+			if has_num:
+				self.status = "Проигрыш"
+
+
+class You(Player):
+	def __init__(self):
+		super().__init__(Board("Ваша карточка"))
+
+	def choose(self, _):
+		action = '-'
+		while action not in ['y', 'n']:
+			action = input("Зачеркнуть цифру? (y/n) ").lower()
+		return action
+
+class Computer(Player):
+	def __init__(self):
+		super().__init__(Board("Карточка компьютера"))
+
+	def choose(self, num):
+		return 'y' if self.card.check_num(num) else 'n'
+
+
+
 class Lotto:
 	def __init__(self):
-		self.player1 = Board("Ваша карточка")
-		self.player2 = Board("Карточка компьютера")
+		self.player1 = You()
+		self.player2 = Computer()
 		self.barrels = get_barrels()
 		self.remain   = 90
-	
+
 	def Loop(self):
-		while self.remain and not self.player1.win() and not self.player2.win():
+		while self.remain and self.player1.status == 'В игре' and self.player2.status == 'В игре':
 			b = self.barrels.__next__()
 			self.remain = self.remain-1
 			print("Новый бочонок: {:2} (осталось {})".format(b, self.remain))
-			self.player1.print()
-			self.player2.print()
-			# Действие игрока
-			action = '-'
-			while action not in ['y', 'n']:
-				action = input("Зачеркнуть цифру? (y/n) ").lower()
-			if action == 'y':
-				self.player1.strike_out(b)
-				self.player2.strike_out(b)
+			self.player1.showCard()
+			self.player2.showCard()
+			self.player1.move(b)
+			self.player2.move(b)
+
+		print("Результаты: Вы: {}, Компьютер: {}".format(self.player1.status, self.player2.status))
 
 
+
+# main
 l = Lotto()
 l.Loop()
-			
 
 
